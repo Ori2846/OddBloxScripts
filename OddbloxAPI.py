@@ -1,8 +1,10 @@
 import discord
+from discord import Interaction
 from discord.ext import commands
 import urllib.request
 import json
 import os
+import asyncio
 intents = discord.Intents.default()
 intents.message_content = True
 client = commands.Bot(command_prefix='!', intents=intents)
@@ -19,17 +21,12 @@ class Buttons(discord.ui.View):
     async def blurple_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         interaction.style = discord.ButtonStyle.green
         interaction.disabled = True
+        #view = DropdownView()
         view = Buttons2()
-        view.add_item(discord.ui.Button(label="Download PNG", style=discord.ButtonStyle.link,
-                                        url="https://api.oddblox.io/api/png/"+self.index))
-        view.add_item(discord.ui.Button(label="Download SVG", style=discord.ButtonStyle.link,
-                                        url="https://api.oddblox.io/api/image/"+self.index))
-        view.add_item(discord.ui.Button(label="Download Circular", style=discord.ButtonStyle.link,
-                                        url="https://api.oddblox.io/api/circular/"+self.index))
-        view.add_item(discord.ui.Button(label="Download Metadata", style=discord.ButtonStyle.link,
-                                        url="https://api.oddblox.io/api/" + self.index))
+        #await button.response.edit_message(view=view)
+
+        await button.response.edit_message(view=DropdownView())
         # await button.response.send_message(view=view,ephemeral=True)
-        await button.response.edit_message(view=view)
 
 
 
@@ -104,17 +101,77 @@ async def oddblox(ctx, INDEX):
     embed.set_thumbnail(url="https://api.oddblox.io/api/png/" + INDEX)
     await ctx.message.delete()
     await ctx.send(embed=embed)
-    Buttons.index = Buttons2.index = Buttons3.index = INDEX
+    Dropdown.index=  Buttons.index = Buttons2.index = Buttons3.index = INDEX
     view = Buttons()
     await ctx.send("", view=view)
 
+"""class Dropdown(discord.ui.Select):
+    def __init__(self, *, timeout=180):
+        selecoptions = [
+            discord.SelectOption(label="Download PNG",description=""),
+            discord.SelectOption(label="Download SVG",description=""),
+            discord.SelectOption(label="Download Circular",description=""),
+            discord.SelectOption(label="Download Metadata",description="")
+        ]
+        super().__init__(placeholder="Download Links",min_values=1,max_values=1,options=selecoptions)
 
+        async def callback(self, interaction: discord.Interaction):
+            if(self.values[0]=="Download PNG"):
+                await interaction.response.send_message("Thank you")
+            else:
+                await interaction.response.send_message("Thank you2")
+class DropdownView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(Dropdown())"""
+class Dropdown(discord.ui.Select):
+    def Index(self, index):
+        self.index = index
+    def __init__(self):
+        options = [
+            discord.SelectOption(label="Download PNG",description=""),
+            discord.SelectOption(label="Download SVG",description=""),
+            discord.SelectOption(label="Download Circular",description=""),
+            discord.SelectOption(label="Download Metadata",description=""),
+            discord.SelectOption(label="Metadata Information",description=""),
+            discord.SelectOption(label="Custom Download",description="")
+        ]
+
+        super().__init__(placeholder='Download image...', min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        # Use the interaction object to send a response message containing
+        # the user's favourite colour or choice. The self object refers to the
+        # Select object, and the values attribute gets a list of the user's
+        # selected options. We only want the first one.
+        if(self.values[0]=="Download PNG"):
+            embed = discord.Embed(title="PNG DOWNLOAD",url="https://api.oddblox.io/api/png/"+self.index)
+            await interaction.response.edit_message(embed=embed)
+        elif(self.values[0]=="Download SVG"):
+            embed = discord.Embed(title="SVG DOWNLOAD:",url="https://api.oddblox.io/api/svg/"+self.index)
+            await interaction.response.edit_message(embed=embed)
+        elif(self.values[0]=="Download Circular"):
+            embed = discord.Embed(title="CIRCULAR DOWNLOAD:",url="https://api.oddblox.io/api/circular/"+self.index)
+            await interaction.response.edit_message(embed=embed)
+        else:
+            embed = discord.Embed(title="TESTING ERROR - 404",url="https://api.oddblox.io/api/circular/"+self.index)
+            await interaction.response.edit_message(embed=embed)
+
+
+class DropdownView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(Dropdown())
 @client.command()
 async def button(ctx):
     view = Buttons()
     view.add_item(discord.ui.Button(label="Download PNG", style=discord.ButtonStyle.link,
                                     url="https://api.oddblox.io/api/png/192"))
     await ctx.send("ther", view=view)
+@client.command()
+async def dropdowntest(ctx):
+    view = DropdownView()
+    await ctx.send("", view=view)
 
 
 client.run(os.environ['SECRET'])
